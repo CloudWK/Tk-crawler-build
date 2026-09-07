@@ -6,7 +6,7 @@ from scripts.timeStamp import get_current_timestamp, convert_timestamp_to_readab
 from tkinter import messagebox
 
 
-print(convert_curl_to_requests("curl -X GET https://example.com"))
+# print(convert_curl_to_requests("curl -X GET https://example.com"))
 
 class ToolkitApp:
     
@@ -43,7 +43,7 @@ class ToolkitApp:
         ) # 文本框
         text1.grid(row=1, column=0, ipadx=20, ipady=20, sticky="e", padx=(0,0), rowspan=2)
         
-        self.add_placeholder(text1, "请在此粘贴 cURL 命令...")
+        self.add_placeholder(text1, " 请在此粘贴 cURL 命令...")
         # text1.config(wrap="word")  # 设置自动换行
         
         # 2,1
@@ -91,7 +91,7 @@ class ToolkitApp:
         # 时间戳
         label3 = Label(
             self.root,
-            text="输入时间戳转换：", 
+            text="请 输 入 时 间 戳 ：", 
             font=("微软雅黑", 11)
         )
         label3.grid(row=3, column=0, sticky="w", padx=(30,0), pady=(10,0))
@@ -99,19 +99,67 @@ class ToolkitApp:
         entry = Entry(
             self.root,
             font=("Arial", 12), 
-            width=20,
+            width=22,
         )
-        entry.grid(row=3, column=0, padx=(130,0), pady=(10,0), ipady=2, ipadx=20)
-        self.add_placeholder(entry, '输入时间戳进行转换（回车确定）')
+        entry.grid(row=3, column=0, padx=(180,0), pady=(10,0), ipady=2, ipadx=20, sticky="w")
+        self.add_placeholder(entry, ' 回车（Enter）转换时间戳', color="green")
         entry.bind("<Return>", lambda _: messagebox.showinfo("转换结果", convert_timestamp_to_readable_format(entry.get())))
         
-        label4 = Label(
-            self.root,
-            text="当前时间戳：", 
+        # 创建一个 Frame 来容纳“时间戳标签”和“刷新按钮and复制按钮”
+        time_frame = tk.Frame(self.root)
+        time_frame.grid(row=3, column=2, sticky="w", padx=(10,0), pady=(10,0))
+
+        # 时间戳标签（保存引用以便刷新）
+        self.current_timestamp_label = Label(
+            time_frame,
+            text=f"系 统 当 前 时 间 戳：{get_current_timestamp()}",
             font=("微软雅黑", 11)
         )
-        label4.grid(row=3, column=2, sticky="w", padx=(10,0), pady=(10,0))
+        self.current_timestamp_label.pack(side="left", padx=(5, 0))
+        
+        # 刷新图标按钮（改为扁平样式，只显示图标）
+        refresh_btn = Button(
+            time_frame,
+            text="刷 新",                      
+            font=("微软雅黑", 10),
+            fg="white",                   # 图标颜色
+            bg="#a1c4fd",                     # 背景与窗口一致
+            # relief="flat",                  # 去掉边框
+            bd=0,                           # 边框宽度为0
+            activebackground="white",       # 点击时背景不变
+            command=self.refresh_timestamp  # 绑定刷新方法
+        )
+        refresh_btn.pack(side="left", padx=(30, 0))
+        
+        # 复制图标按钮（改为扁平样式，只显示图标）
+        self.copy_btn = Button(
+            time_frame,
+            text="复 制",                      
+            font=("微软雅黑", 10),
+            fg="white",                   # 图标颜色
+            bg="#a1c4fd",                     # 背景与窗口一致
+            # relief="flat",                  # 去掉边框
+            bd=0,                           # 边框宽度为0
+            activebackground="white",       # 点击时背景不变
+            command=self.copy_timestamp  # 绑定复制方法
+        )
+        self.copy_btn.pack(side="left", padx=(20, 0))
     
+    def refresh_timestamp(self):
+        """刷新当前时间戳显示"""
+        if self.current_timestamp_label:
+            new_ts = get_current_timestamp()
+            self.current_timestamp_label.config(text=f"系 统 当 前 时 间 戳：{new_ts}")
+            self.copy_btn.config(text="复 制", bg="#a1c4fd")  # 还原复制按钮样式
+        
+    def copy_timestamp(self):
+        """复制当前时间戳到剪贴板"""
+        if self.current_timestamp_label:
+            ts_text = self.current_timestamp_label.cget("text").split("：")[-1]
+            self.root.clipboard_clear()  # 清空剪贴板
+            self.root.clipboard_append(ts_text)  # 复制内容到剪贴板
+            # messagebox.showinfo("提示", f"已复制时间戳：{ts_text}")
+            self.copy_btn.config(text="已复制", bg="#4CAF50")  # 改变按钮文本和颜色
     # 清空
     def clear_text(self, text):
         text.delete('1.0', 'end')
