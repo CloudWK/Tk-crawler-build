@@ -10,7 +10,7 @@ from tkinter import messagebox
 
 class ToolkitApp:
     
-    def __init__(self):
+    def __init__(self): 
         self.root = tk.Tk()
         self.root.title("Yunr爬虫工具箱v1.0.1")
         self.root.geometry("920x520+350+100")
@@ -37,11 +37,11 @@ class ToolkitApp:
         # 1,0
         text1 = Text(
             self.root, 
-            width=40, 
+            width=45, 
             height=20, 
             font=("Arial", 12)
         ) # 文本框
-        text1.grid(row=1, column=0, ipadx=20, ipady=20, sticky="e", padx=(0,0), rowspan=2)
+        text1.grid(row=1, column=0, ipadx=20, ipady=20, sticky="e", padx=(12,0), rowspan=2)
         
         self.add_placeholder(text1, " 请在此粘贴 cURL 命令...")
         # text1.config(wrap="word")  # 设置自动换行
@@ -53,6 +53,7 @@ class ToolkitApp:
             fg="white", 
             text="转 换",
             width=5,
+            cursor="hand2",                 # 鼠标悬停时显示手型
             font=("微软雅黑", 11), 
             command=lambda: self.convert_curl(text1)
         ) # 按钮
@@ -64,6 +65,7 @@ class ToolkitApp:
             fg="white", 
             text="清 空", 
             width=5, 
+            cursor="hand2",                 # 鼠标悬停时显示手型
             font=("微软雅黑", 11), 
             command=lambda: self.clear_text(text1)
         ) # 按钮
@@ -72,21 +74,25 @@ class ToolkitApp:
         # 创建标签
         label2 = Label(
             self.root,
-            text="Python requests",
-            font=("Arial", 11)
+            text="Python requests（Ctrl+A+C 复制）",
+            font=("微软雅黑", 11),
+            # bg="#f4f4e1",  # 设置背景颜色
+            anchor="center",  # 设置文本对齐方式为左对齐
+            width=12
         )
-        label2.grid(row=0, column=2,ipadx=130, ipady=10,padx=(50,0), sticky="w")
+        label2.grid(row=0, column=2,ipadx=130, ipady=10,padx=(50,0), sticky="w")  # 设置标签位置和对齐方式
         # 1,2
-        text2 = Text(
+        self.text2 = Text(
             self.root, 
-            width=40, 
-            height=21,
-            font=("Arial", 12), 
+            width=45, 
+            height=22,
+            font=("Arial", 11), 
             state='disabled', 
             bg="#f4f4e1", 
-            cursor="spider" 
+            cursor="spider"
         ) # 文本框
-        text2.grid(row=1, column=2, ipadx=20, ipady=20, sticky="e", padx=(10,0), rowspan=2)
+        self.text2.grid(row=1, column=2, ipadx=20, ipady=20, sticky="e", padx=(0,0), rowspan=2)
+        
         
         # 时间戳
         label3 = Label(
@@ -94,14 +100,14 @@ class ToolkitApp:
             text="请 输 入 时 间 戳 ：", 
             font=("微软雅黑", 11)
         )
-        label3.grid(row=3, column=0, sticky="w", padx=(30,0), pady=(10,0))
+        label3.grid(row=3, column=0, sticky="w", padx=(40,0), pady=(10,0))
         
         entry = Entry(
             self.root,
             font=("Arial", 12), 
             width=22,
         )
-        entry.grid(row=3, column=0, padx=(180,0), pady=(10,0), ipady=2, ipadx=20, sticky="w")
+        entry.grid(row=3, column=0, padx=(190,0), pady=(10,0), ipady=2, ipadx=20, sticky="w")
         self.add_placeholder(entry, ' 回车（Enter）转换时间戳', color="green")
         entry.bind("<Return>", lambda _: messagebox.showinfo("转换结果", convert_timestamp_to_readable_format(entry.get())))
         
@@ -126,6 +132,7 @@ class ToolkitApp:
             bg="#a1c4fd",                     # 背景与窗口一致
             # relief="flat",                  # 去掉边框
             bd=0,                           # 边框宽度为0
+            cursor="hand2",                 # 鼠标悬停时显示手型
             activebackground="white",       # 点击时背景不变
             command=self.refresh_timestamp  # 绑定刷新方法
         )
@@ -140,6 +147,7 @@ class ToolkitApp:
             bg="#a1c4fd",                     # 背景与窗口一致
             # relief="flat",                  # 去掉边框
             bd=0,                           # 边框宽度为0
+            cursor="hand2",                 # 鼠标悬停时显示手型
             activebackground="white",       # 点击时背景不变
             command=self.copy_timestamp  # 绑定复制方法
         )
@@ -163,16 +171,53 @@ class ToolkitApp:
     # 清空
     def clear_text(self, text):
         text.delete('1.0', 'end')
+        self.text2.config(state='normal')
+        self.text2.delete('1.0', 'end')
+        self.text2.config(state='disabled')
         
     # 转换
     def convert_curl(self, text1):
         content = text1.get('1.0', "end-1c").strip()
-        if content == "" or content == text1._placeholder:
-            messagebox.showwarning("警告", "请先输入 cURL 命令")
+        # python字典格式化方法
+        def dict_to_lines(d, indent=2):
+            # indent: 缩进数量
+            pad = " " * indent
+            body = ",\n".join(f"{pad}{k!r}: {v!r}" for k, v in d.items())
+            return "{\n" + body + ",\n}"
+        if content == "" or content == text1._placeholder.strip():
+            messagebox.showwarning("警告", "请先输入bash curl 命令")
             return None
+        proto_curl = convert_curl_to_requests(content)
+        if proto_curl.__len__() == 2 and proto_curl[0] != '':
+            # 1. 启用文本框
+            self.text2.config(state='normal')
+            self.text2.delete('1.0', 'end') # 每次转换前先清空（放置重复点击转换）
+            # 2. 插入文字（例如在末尾追加）
+            self.text2.insert(
+                'end',
+                f'import requests\n\nheaders= {dict_to_lines(proto_curl[1])}\n\n'
+                f'response = requests.get({repr(proto_curl[0])},headers=headers)'
+            )   
+            # 3. 恢复禁用状态（如果需要保持只读）
+            self.text2.config(state='disabled')
+        elif proto_curl.__len__() == 3 and proto_curl[0] != '':
+            # 1. 启用文本框
+            self.text2.config(state='normal')
+            self.text2.delete('1.0', 'end') # 每次转换前先清空（放置重复点击转换）
+            # 2. 插入文字（例如在末尾追加）
+            self.text2.insert(
+                'end',
+                f'import requests\n\n\nheaders = {dict_to_lines(proto_curl[1])}\n\n'
+                f'cookies = {dict_to_lines(proto_curl[2])}\n\n'
+                f'response = requests.get({repr(proto_curl[0])},headers=headers,cookies=cookies)\n\nprint(response.status_code)'
+            )   
+            # 3. 恢复禁用状态（如果需要保持只读）
+            self.text2.config(state='disabled')
+        else: messagebox.showerror("警告", "输入bash curl 命令不规范")
+            
         
         
-
+    # 提示文字
     def add_placeholder(self, widget, placeholder_text, color="#444444"):
         """为 Text 或 Entry 组件添加占位提示（通用方法）"""
         widget._placeholder = placeholder_text
