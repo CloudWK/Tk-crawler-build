@@ -18,7 +18,7 @@ def convert_curl_to_requests(curl_command):
     for index,line in enumerate(lines):
         if index == 0:
             # Extract the URL from the first line
-            url_match = re.search(r"curl\s+--url\s+'([^']+)'", line)
+            url_match = re.search(r"curl\s.*url\s+'([^']+)'", line)
             if url_match:
                 url = url_match.group(1) # 头部url
                 continue
