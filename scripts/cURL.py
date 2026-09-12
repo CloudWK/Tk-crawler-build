@@ -18,14 +18,15 @@ def convert_curl_to_requests(curl_command):
     for index,line in enumerate(lines):
         if index == 0:
             # Extract the URL from the first line
-            url_match = re.search(r"curl\s.*url\s+'([^']+)'", line)
+            url_match = re.search(r"curl\s+(?:.*url\s+)?['\"]([^'\"]+)['\"]", line)
             if url_match:
                 url = url_match.group(1) # 头部url
                 continue
                 # print(f"import requests\n\nresponse = requests.get('{url}')\nprint(response.text)\n")
         try:
             line = line.strip()        
-            head_match = re.search(r"-H\s+['\"]([^:]+):\s*([^'\"].+)['\"]", line)
+            # head_match = re.search(r"-H\s+['\"]([^:]+):\s*([^'\"].+)['\"]", line)
+            head_match = re.search(r"-H\s+['\"]([^:]+):\s*(.+)['\"]", line)
             
             # print(index, line)
             # header部分
