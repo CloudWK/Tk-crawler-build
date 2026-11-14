@@ -3,49 +3,48 @@ import re
 
 def convert_curl_to_requests(curl_command):
     """
-    Converts a cURL command to a Python requests code snippet.
-    
-    Args:
-        curl_command (str): The cURL command to convert.
-        
-    Returns:
-        str: The equivalent Python requests code snippet.
+    解析 cURL 命令，返回 (url, headers, cookies, data)。
+    data 是字符串（原样），没解析到就是 None。
     """
-    head_data = {} # header的数据
+    head_data = {}
     cookies_data = {}
+    data = None
     url = ''
+
     lines = curl_command.split(" \\")
-    for index,line in enumerate(lines):
+    for index, line in enumerate(lines):
         if index == 0:
-            # Extract the URL from the first line
             url_match = re.search(r"curl\s+(?:.*url\s+)?['\"]([^'\"]+)['\"]", line)
             if url_match:
-                url = url_match.group(1) # 头部url
+                url = url_match.group(1)
                 continue
-                # print(f"import requests\n\nresponse = requests.get('{url}')\nprint(response.text)\n")
+
         try:
-            line = line.strip()        
-            # head_match = re.search(r"-H\s+['\"]([^:]+):\s*([^'\"].+)['\"]", line)
+            line = line.strip()
             head_match = re.search(r"-H\s+['\"]([^:]+):\s*(.+)['\"]", line)
-            
-            # print(index, line)
-            # header部分
-            # print(head_match.group(1)+':'+head_match.group(2)) # -H的key
             head_data[head_match.group(1)] = head_match.group(2).strip()
         except AttributeError:
-            line = line.replace("-b $'", "")
+            line = line.strip()
+
+            data_match = re.search(
+                r"(?:--data-raw|--data-binary|--data-urlencode|--data|-d)\s+['\"](.*)['\"]$",
+                line
+            )
+            if data_match:
+                data = data_match.group(1)
+                continue
+
+            line = re.sub(r"^(?:-b|--cookie)\s+['\"]?", "", line)
+            line = re.sub(r"['\"]$", "", line)
+
             pairs = re.findall(r"([^=;]+)=([^;]*)", line)
             for key, value in pairs:
-                # key = key.strip(), value = value.strip()
-                key = key.lstrip()
-                # print(f"{key} : {value}")
-                cookies_data[key] = value
-            
-    # return f"import requests\n\nresponse = requests.get('https://example.com')\nprint(response.text)"
-    return (url,head_data,cookies_data) if head_data and cookies_data else (url,head_data)
+                cookies_data[key.strip()] = value.strip()
 
-# 测试数据---------------------------------------------------------
-# text = r"""curl --url 'https://api.bilibili.com/x/player/wbi/v2?aid=117086529592045&cid=40865303126&isGaiaAvoided=false&web_location=1315873&dm_img_list=\[\]&dm_img_str=V2ViR0wgMS4wIChPcGVuR0wgRVMgMi4wIENocm9taXVtKQ&dm_cover_img_str=QU5HTEUgKEludGVsLCBJbnRlbChSKSBVSEQgR3JhcGhpY3MgNjIwICgweDAwMDAzRUEwKSBEaXJlY3QzRDExIHZzXzVfMCBwc181XzAsIEQzRDExKUdvb2dsZSBJbmMuIChJbnRlbC&dm_img_inter=%7B%22ds%22:\[\],%22wh%22:\[2601,2002,1\],%22of%22:\[104,208,104\]%7D&w_rid=59437c9e6a7754a427d60509496140c9&wts=1788864602' \
+    return url, head_data, cookies_data, data
+
+
+# data = r"""curl --url 'https://api.bilibili.com/x/player/wbi/v2?aid=117086529592045&cid=40865303126&isGaiaAvoided=false&web_location=1315873&dm_img_list=\[\]&dm_img_str=V2ViR0wgMS4wIChPcGVuR0wgRVMgMi4wIENocm9taXVtKQ&dm_cover_img_str=QU5HTEUgKEludGVsLCBJbnRlbChSKSBVSEQgR3JhcGhpY3MgNjIwICgweDAwMDAzRUEwKSBEaXJlY3QzRDExIHZzXzVfMCBwc181XzAsIEQzRDExKUdvb2dsZSBJbmMuIChJbnRlbC&dm_img_inter=%7B%22ds%22:\[\],%22wh%22:\[2601,2002,1\],%22of%22:\[104,208,104\]%7D&w_rid=59437c9e6a7754a427d60509496140c9&wts=1788864602' \
 #   -H 'accept: application/json, text/plain, */*' \
 #   -H 'accept-language: zh-CN,zh;q=0.9' \
 #   -H 'cache-control: no-cache' \
@@ -62,4 +61,4 @@ def convert_curl_to_requests(curl_command):
 #   -H 'sec-fetch-site: same-site' \
 #   -H 'user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36'"""
 
-# print(convert_curl_to_requests(text))
+# print(convert_curl_to_requests(data))

@@ -4,6 +4,7 @@ from scripts.cURL import convert_curl_to_requests
 from scripts.timeStamp import get_current_timestamp, convert_timestamp_to_readable_format
 # from tkinter import LEFT
 from tkinter import messagebox
+import json
 
 
 # print(convert_curl_to_requests("curl -X GET https://example.com"))
@@ -12,7 +13,7 @@ class ToolkitApp:
     
     def __init__(self): 
         self.root = tk.Tk()
-        self.root.title("Yunr爬虫工具箱v1.0.1")
+        self.root.title("Yunr爬虫工具箱v2.0")
         self.root.geometry("920x520+350+100")
         self.root.resizable(False, False) # 设置窗口是否可调整大小（width, height）
         # # 让第0行和第0列可以伸缩
@@ -187,8 +188,8 @@ class ToolkitApp:
         if content == "" or content == text1._placeholder.strip():
             messagebox.showwarning("警告", "请先输入bash curl 命令")
             return None
-        proto_curl = convert_curl_to_requests(content)
-        if proto_curl.__len__() == 2 and proto_curl[0] != '':
+        proto_curl = convert_curl_to_requests(rf'{content}')
+        if proto_curl.count(None) == 2:
             # 1. 启用文本框
             self.text2.config(state='normal')
             self.text2.delete('1.0', 'end') # 每次转换前先清空（放置重复点击转换）
@@ -200,7 +201,7 @@ class ToolkitApp:
             )   
             # 3. 恢复禁用状态（如果需要保持只读）
             self.text2.config(state='disabled')
-        elif proto_curl.__len__() == 3 and proto_curl[0] != '':
+        elif proto_curl.count(None) == 1:
             # 1. 启用文本框
             self.text2.config(state='normal')
             self.text2.delete('1.0', 'end') # 每次转换前先清空（放置重复点击转换）
@@ -210,6 +211,19 @@ class ToolkitApp:
                 f'import requests\n\n\nheaders = {dict_to_lines(proto_curl[1])}\n\n'
                 f'cookies = {dict_to_lines(proto_curl[2])}\n\n'
                 f'response = requests.get({repr(proto_curl[0])},headers=headers,cookies=cookies)\n\nprint(response.status_code)'
+            )   
+            # 3. 恢复禁用状态（如果需要保持只读）
+            self.text2.config(state='disabled')
+        elif proto_curl.count(None) == 0:
+            # 1. 启用文本框
+            self.text2.config(state='normal')
+            self.text2.delete('1.0', 'end') # 每次转换前先清空（放置重复点击转换）
+            # 2. 插入文字（例如在末尾追加）
+            self.text2.insert(
+                'end',
+                f'import requests\n\n\nheaders = {dict_to_lines(proto_curl[1])}\n\n'
+                f'cookies = {dict_to_lines(proto_curl[2])}\n\n'
+                f'response = requests.post({repr(proto_curl[0])},headers=headers, json={json.loads(proto_curl[3])},cookies=cookies)\n\nprint(response.status_code)'
             )   
             # 3. 恢复禁用状态（如果需要保持只读）
             self.text2.config(state='disabled')
